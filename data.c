@@ -5,7 +5,6 @@
 
 /*
  * 功能：将已有图书节点复制一份并追加到结果链表末尾。
- * 参数：head/tail 为结果链表的头尾指针，src 为要复制的源节点。
  * 返回：成功返回新节点指针，失败返回 NULL（需由调用方释放已建结果链表）。
  */
 static BookNode *append_copy_node(BookNode **head, BookNode **tail, const BookNode *src) {
@@ -74,7 +73,6 @@ int add_book(BookNode **head, const char *isbn, const char *title, const char *a
 
 /*
  * 功能：按 ISBN 删除指定图书节点。
- * 说明：会释放被删除节点内存，并维护链表指针。
  * 返回：0=成功，-1=未找到或参数无效。
  */
 int delete_book(BookNode **head, const char *isbn) {
@@ -116,13 +114,13 @@ int loan_book(BookNode *head, const char *isbn, int quantity) {
         return -1;
     }
 
-    // 定位目标图书节点。
+    // 定位目标图书。
     BookNode *target = search_by_isbn(head, isbn);
     if (!target) {
         return -1;
     }
 
-    // 库存不足时拒绝借阅，避免库存为负。
+    // 库存不足时拒绝借阅
     if (target->stock < quantity) {
         return -1;
     }
@@ -144,13 +142,13 @@ int return_book(BookNode *head, const char *isbn, int quantity) {
         return -1;
     }
 
-    // 定位目标图书节点。
+    // 定位目标图书。
     BookNode *target = search_by_isbn(head, isbn);
     if (!target) {
         return -1;
     }
 
-    // 借阅量不足时拒绝归还，避免出现负数。
+    // 借阅量不足时拒绝归还
     if (target->loaned < quantity) {
         return -1;
     }
@@ -166,12 +164,12 @@ int return_book(BookNode *head, const char *isbn, int quantity) {
  * 返回：找到则返回节点指针，未找到返回 NULL。
  */
 BookNode *search_by_isbn(BookNode *head, const char *isbn) {
-    // ISBN 不能为空，否则无法匹配。
+    // ISBN 不能为空
     if (!isbn) {
         return NULL;
     }
 
-    // 线性遍历链表，精确匹配 ISBN。
+    //遍历链表，精确匹配 ISBN。
     for (BookNode *cur = head; cur != NULL; cur = cur->next) {
         if (strcmp(cur->isbn, isbn) == 0) {
             return cur;
@@ -183,7 +181,7 @@ BookNode *search_by_isbn(BookNode *head, const char *isbn) {
 
 /*
  * 功能：按关键词模糊搜索（书名或作者包含关键字即可匹配）。
- * 说明：返回的是新建结果链表，使用后需 destroy_list 释放。
+ * 说明：返回的是新建结果链表，使用后需释放。
  * 返回：结果链表头指针，未命中返回 NULL。
  */
 BookNode *search_by_keyword(BookNode *head, const char *keyword) {
@@ -192,7 +190,6 @@ BookNode *search_by_keyword(BookNode *head, const char *keyword) {
         return NULL;
     }
 
-    // 构建独立的结果链表，避免改动原链表。
     BookNode *result_head = NULL;
     BookNode *result_tail = NULL;
 
@@ -209,8 +206,6 @@ BookNode *search_by_keyword(BookNode *head, const char *keyword) {
             destroy_list(result_head);
             return NULL;
         }
-
-        // 字段为定长数组，浅拷贝即可安全复制。
         *node = *cur;
         node->next = NULL;
 
@@ -229,7 +224,7 @@ BookNode *search_by_keyword(BookNode *head, const char *keyword) {
 
 /*
  * 功能：按书名精确匹配搜索。
- * 说明：返回的新链表需要由调用方释放。
+ * 说明：返回的新链表需要释放。
  * 返回：结果链表头指针，未命中返回 NULL。
  */
 BookNode *search_by_title(BookNode *head, const char *title) {
@@ -256,7 +251,7 @@ BookNode *search_by_title(BookNode *head, const char *title) {
 
 /*
  * 功能：按作者精确匹配搜索。
- * 说明：返回的新链表需要由调用方释放。
+ * 说明：返回的新链表需要释放。
  * 返回：结果链表头指针，未命中返回 NULL。
  */
 BookNode *search_by_author(BookNode *head, const char *author) {
@@ -303,7 +298,6 @@ int update_book(BookNode *head, const char *isbn, const char *title, const char 
 
 /*
  * 功能：释放链表所有节点内存。
- * 说明：常用于释放搜索结果链表或程序退出时清理。
  */
 void destroy_list(BookNode *head) {
     // 逐节点释放内存，直到链表结束。
