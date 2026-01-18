@@ -21,6 +21,7 @@ int get_terminal_width(void);
 int get_terminal_height(void);
 void clear_screen(void);
 void read_pwd(char *buf, size_t sz);
+void init_terminal(void);
 
 #ifdef __cplusplus
 }

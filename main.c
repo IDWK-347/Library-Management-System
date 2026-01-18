@@ -437,6 +437,7 @@ static void color_main_menu(void){
     }
     printf("\033[38;2;0;230;200mOcean of Knowledege Library  (OOKL)\033[38;2;0;206;209m\n");
 
+    
     for (int i = 0; i < center_offset + 2; i++) {
         printf(" ");
     }
