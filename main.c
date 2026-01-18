@@ -2,36 +2,12 @@
 #include "logic.h"
 #include "store.h"
 #include "user.h"
+#include "terminal.h"
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
-#include <sys/ioctl.h>
-#include <unistd.h>
-#include <termios.h>
 
 #define PERSISTENCE_FILE "library_data.json"
-
-/* 获取终端窗口宽度 */
-static int get_terminal_width(void){
-    struct winsize w;
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    if (w.ws_col == 0) {
-        char *cols = getenv("COLUMNS");
-        return cols ? atoi(cols) : 80;
-    }
-    return w.ws_col;
-}
-
-/* 获取终端窗口高度 */
-static int get_terminal_height(void){
-    struct winsize w;
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    if (w.ws_row == 0) {
-        char *lines = getenv("LINES");
-        return lines ? atoi(lines) : 24;
-    }
-    return w.ws_row;
-}
 
 /* ---------- 工具 ---------- */
 static void trim_newline(char *s){
@@ -55,33 +31,6 @@ static void print_color_line(const char *text,
                              int fg_r,int fg_g,int fg_b){
     printf("\033[48;2;%d;%d;%dm\033[38;2;%d;%d;%dm%s\033[0m\n",
            bg_r,bg_g,bg_b, fg_r,fg_g,fg_b, text);
-}
-
-/* 读取密码，回显 '*' */
-static void read_pwd(char *buf,size_t sz){
-    struct termios oldt, newt;
-    int ch;
-    size_t i = 0;
-    
-    tcgetattr(STDIN_FILENO, &oldt);
-    newt = oldt;
-    newt.c_lflag &= ~(ICANON | ECHO);
-    tcsetattr(STDIN_FILENO, TCSANOW, &newt);
-    
-    while(i < sz-1 && (ch = getchar()) != EOF && ch != '\n'){
-        if((ch == 127 || ch == 8) && i > 0){
-            --i; 
-            fputs("\b \b", stdout);
-        }else{
-            buf[i++] = (char)ch;
-            putchar('*');
-            fflush(stdout);
-        }
-    }
-    
-    buf[i] = 0;
-    tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
-    putchar('\n');
 }
 
 /* ---------- 原有函数 ---------- */
@@ -155,7 +104,7 @@ static void print_help(void) {
 
 /* ---------- 注册界面 ---------- */
 static void register_screen(UserNode **users){
-    printf("\033[2J\033[H");
+    clear_screen();
     
     int term_width = get_terminal_width();
     if (term_width < 80) term_width = 80;
@@ -185,13 +134,13 @@ static void register_screen(UserNode **users){
  
     if (strlen(account) == 0) {
         printf("\033[38;2;255;0;0m账号不能为空！\n\033[0m");
-        sleep(2);
+        msleep(2);
         return;
     }
  
     if (account_exists(*users, account)) {
         printf("\033[38;2;255;0;0m账号已存在！\n\033[0m");
-        sleep(2);
+        msleep(2);
         return;
     }
  
@@ -203,7 +152,7 @@ static void register_screen(UserNode **users){
  
     if (strcmp(password, password_confirm) != 0) {
         printf("\033[38;2;255;0;0m两次密码不一致！\n\033[0m");
-        sleep(2);
+        msleep(2);
         return;
     }
   
@@ -213,7 +162,7 @@ static void register_screen(UserNode **users){
   
     if (strlen(question) == 0) {
         printf("\033[38;2;255;0;0m密保问题不能为空！\n\033[0m");
-        sleep(2);
+        msleep(2);
         return;
     }
   
@@ -223,7 +172,7 @@ static void register_screen(UserNode **users){
   
     if (strlen(answer) == 0) {
         printf("\033[38;2;255;0;0m密保答案不能为空！\n\033[0m");
-        sleep(2);
+        msleep(2);
         return;
     }
  
@@ -243,7 +192,7 @@ static void register_screen(UserNode **users){
         role = ROLE_ADMIN;
     } else {
         printf("\033[38;2;255;0;0m无效选择！\n\033[0m");
-        sleep(2);
+        msleep(2);
         return;
     }
  
@@ -254,12 +203,12 @@ static void register_screen(UserNode **users){
         printf("\033[38;2;255;0;0m注册失败！\n\033[0m");
     }
  
-    sleep(2);
+    msleep(2);
 }
 
  /* ---------- 找回密码界面 ---------- */
  static void forgot_password_screen(UserNode *users){
-     printf("\033[2J\033[H");
+     clear_screen();
      
      int term_width = get_terminal_width();
      if (term_width < 80) term_width = 80;
@@ -285,14 +234,14 @@ static void register_screen(UserNode **users){
   
      if (!account_exists(users, account)) {
          printf("\033[38;2;255;0;0m账号不存在！\n\033[0m");
-         sleep(2);
+         msleep(2);
          return;
      }
   
      char *question = get_secret_question(users, account);
      if (!question) {
          printf("\033[38;2;255;0;0m获取密保问题失败！\n\033[0m");
-         sleep(2);
+         msleep(2);
          return;
      }
   
@@ -303,7 +252,7 @@ static void register_screen(UserNode **users){
   
      if (verify_secret(users, account, answer) != 0) {
          printf("\033[38;2;255;0;0m密保答案错误！\n\033[0m");
-         sleep(2);
+         msleep(2);
          return;
      }
   
@@ -318,7 +267,7 @@ static void register_screen(UserNode **users){
   
      if (strcmp(new_password, new_password_confirm) != 0) {
          printf("\033[38;2;255;0;0m两次密码不一致！\n\033[0m");
-         sleep(2);
+         msleep(2);
          return;
      }
  
@@ -329,12 +278,12 @@ static void register_screen(UserNode **users){
          printf("\033[38;2;255;0;0m密码修改失败！\n\033[0m");
      }
  
-     sleep(2);
+     msleep(2);
  }
 
  /* ---------- 登录界面 ---------- */
  static UserRole login_screen(UserNode *users){
-     printf("\033[2J\033[H");
+     clear_screen();
      
      int term_width = get_terminal_width();
      if (term_width < 80) term_width = 80;
@@ -381,7 +330,7 @@ static void register_screen(UserNode **users){
     }
     
     if (strcmp(choice, "1") == 0) {
-        printf("\033[2J\033[H");
+        clear_screen();
         
         printf("\n");
         printf("%*s\033[38;2;154;205;50m", 0, "");
@@ -403,7 +352,7 @@ static void register_screen(UserNode **users){
         
         if (strlen(account) == 0) {
             printf("\033[38;2;255;0;0m账号不能为空！\n\033[0m");
-            sleep(2);
+            msleep(2);
             return ROLE_NONE;
         }
         
@@ -413,23 +362,23 @@ static void register_screen(UserNode **users){
         UserRole role;
         if (verify_login(users, account, password, &role) == 0) {
             printf("\033[38;2;0;255;0m登录成功！\n\033[0m");
-            sleep(1);
+            msleep(1);
             return role;
         } else {
             printf("\033[38;2;255;0;0m账号或密码错误！\n\033[0m");
-            sleep(2);
+            msleep(2);
             return ROLE_NONE;
         }
     }
     
     printf("\033[38;2;255;0;0m无效选择！\n\033[0m");
-    sleep(2);
+    msleep(2);
     return ROLE_NONE;
  }
 
 /* ---------- 彩色主界面 ---------- */
 static void color_main_menu(void){
-    printf("\033[2J\033[H");
+    clear_screen();
 
     int term_width = get_terminal_width();
     int term_height = get_terminal_height();
