@@ -7,6 +7,7 @@ add_executable(book_management
     data.c
     logic.c
     store.c
+    terminal.c
 )
 
 include(CTest)
